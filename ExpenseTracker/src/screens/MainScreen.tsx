@@ -16,6 +16,7 @@ import TransactionItem from "../components/TransactionItem";
 import { Transaction } from "../types/Transaction";
 import { RootStackParamList } from "../types/Navigation";
 import { getAllTransactions, deleteTransaction } from "../services/database";
+import { syncToApi } from "../services/apiService";
 
 type MainScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, "Main">;
@@ -25,6 +26,7 @@ const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Load transactions from database
   const loadTransactions = async () => {
@@ -62,6 +64,39 @@ const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
     );
   });
 
+  // Handle sync to API
+  const handleSync = () => {
+    Alert.alert(
+      "Đồng bộ dữ liệu",
+      "Bạn có muốn đồng bộ tất cả dữ liệu lên API?\n\nLưu ý: Dữ liệu cũ trên API sẽ bị xóa và thay thế bằng dữ liệu hiện tại.",
+      [
+        {
+          text: "Hủy",
+          style: "cancel",
+        },
+        {
+          text: "Đồng bộ",
+          onPress: async () => {
+            try {
+              setIsSyncing(true);
+              // Sync all active transactions (already filtered by getAllTransactions)
+              await syncToApi(transactions);
+              Alert.alert("Thành công", "Đã đồng bộ dữ liệu lên API! ✅");
+            } catch (error) {
+              console.error("Sync error:", error);
+              Alert.alert(
+                "Lỗi",
+                "Không thể đồng bộ dữ liệu. Vui lòng kiểm tra:\n• Kết nối internet\n• Cấu hình API trong Settings"
+              );
+            } finally {
+              setIsSyncing(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   // Handle delete transaction
   const handleDelete = (transaction: Transaction) => {
     Alert.alert("Xóa giao dịch", `Bạn có muốn xóa "${transaction.title}"?`, [
@@ -92,12 +127,29 @@ const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <Text style={styles.headerTitle}>EXPENSE TRACKER</Text>
-            <TouchableOpacity
-              style={styles.trashButton}
-              onPress={() => navigation.navigate("Trash")}
-            >
-              <Text style={styles.trashButtonText}>🗑️ Thùng rác</Text>
-            </TouchableOpacity>
+            <View style={styles.headerButtons}>
+              <TouchableOpacity
+                style={styles.syncButton}
+                onPress={handleSync}
+                disabled={isSyncing}
+              >
+                <Text style={styles.syncButtonText}>
+                  {isSyncing ? "⏳" : "🔄"}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.settingsButton}
+                onPress={() => navigation.navigate("Settings")}
+              >
+                <Text style={styles.settingsButtonText}>⚙️</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.trashButton}
+                onPress={() => navigation.navigate("Trash")}
+              >
+                <Text style={styles.trashButtonText}>🗑️</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -213,17 +265,44 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#fff",
     letterSpacing: 1,
+    flex: 1,
+  },
+  headerButtons: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  syncButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  syncButtonText: {
+    fontSize: 18,
+  },
+  settingsButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  settingsButtonText: {
+    fontSize: 18,
   },
   trashButton: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
   },
   trashButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 18,
   },
   searchContainer: {
     flexDirection: "row",

@@ -3,4 +3,5 @@ export type RootStackParamList = {
   AddTransaction: undefined;
   EditTransaction: { transactionId: string };
   Trash: undefined;
+  Settings: undefined;
 };
