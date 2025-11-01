@@ -147,6 +147,12 @@ const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
+                style={styles.statisticsButton}
+                onPress={() => navigation.navigate("Statistics")}
+              >
+                <Text style={styles.statisticsButtonText}>📊</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                 style={styles.settingsButton}
                 onPress={() => navigation.navigate("Settings")}
               >
@@ -341,6 +347,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   syncButtonText: {
+    fontSize: 18,
+  },
+  statisticsButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  statisticsButtonText: {
     fontSize: 18,
   },
   settingsButton: {
