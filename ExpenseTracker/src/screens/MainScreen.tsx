@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -23,6 +24,7 @@ type MainScreenProps = {
 const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Load transactions from database
   const loadTransactions = async () => {
@@ -47,6 +49,18 @@ const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
     await loadTransactions();
     setRefreshing(false);
   };
+
+  // Filter transactions based on search query
+  const filteredTransactions = transactions.filter((transaction) => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return true;
+
+    return (
+      transaction.title.toLowerCase().includes(query) ||
+      transaction.amount.toString().includes(query) ||
+      (transaction.type === "income" ? "thu" : "chi").includes(query)
+    );
+  });
 
   // Handle delete transaction
   const handleDelete = (transaction: Transaction) => {
@@ -87,6 +101,27 @@ const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
           </View>
         </View>
 
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="🔍 Tìm kiếm theo tên, số tiền, loại..."
+            placeholderTextColor="#999"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={() => setSearchQuery("")}
+            >
+              <Text style={styles.clearButtonText}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* Transaction List */}
         <ScrollView
           style={styles.scrollView}
@@ -97,21 +132,30 @@ const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
         >
           <View style={styles.listContainer}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Giao dịch gần đây</Text>
+              <Text style={styles.sectionTitle}>
+                {searchQuery ? "Kết quả tìm kiếm" : "Giao dịch gần đây"}
+              </Text>
               <Text style={styles.transactionCount}>
-                ({transactions.length})
+                ({filteredTransactions.length}
+                {searchQuery && `/${transactions.length}`})
               </Text>
             </View>
 
-            {transactions.length === 0 ? (
+            {filteredTransactions.length === 0 ? (
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>Chưa có giao dịch nào</Text>
+                <Text style={styles.emptyText}>
+                  {searchQuery
+                    ? "Không tìm thấy kết quả"
+                    : "Chưa có giao dịch nào"}
+                </Text>
                 <Text style={styles.emptySubText}>
-                  Nhấn nút "Add" để thêm giao dịch mới
+                  {searchQuery
+                    ? `Không có giao dịch nào khớp với "${searchQuery}"`
+                    : 'Nhấn nút "Add" để thêm giao dịch mới'}
                 </Text>
               </View>
             ) : (
-              transactions.map((transaction) => (
+              filteredTransactions.map((transaction) => (
                 <TransactionItem
                   key={transaction.id}
                   transaction={transaction}
@@ -180,6 +224,38 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 14,
     fontWeight: "600",
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    marginHorizontal: 16,
+    marginVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: 12,
+    color: "#333",
+  },
+  clearButton: {
+    padding: 8,
+    marginLeft: 8,
+  },
+  clearButtonText: {
+    fontSize: 18,
+    color: "#999",
+    fontWeight: "bold",
   },
   scrollView: {
     flex: 1,
