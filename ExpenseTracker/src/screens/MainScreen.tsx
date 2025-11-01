@@ -22,11 +22,14 @@ type MainScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, "Main">;
 };
 
+type FilterType = "all" | "income" | "expense";
+
 const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSyncing, setIsSyncing] = useState(false);
+  const [filterType, setFilterType] = useState<FilterType>("all");
 
   // Load transactions from database
   const loadTransactions = async () => {
@@ -52,8 +55,14 @@ const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
     setRefreshing(false);
   };
 
-  // Filter transactions based on search query
+  // Filter transactions based on search query and filter type
   const filteredTransactions = transactions.filter((transaction) => {
+    // Filter by type
+    if (filterType !== "all" && transaction.type !== filterType) {
+      return false;
+    }
+
+    // Filter by search query
     const query = searchQuery.toLowerCase().trim();
     if (!query) return true;
 
@@ -151,6 +160,58 @@ const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
               </TouchableOpacity>
             </View>
           </View>
+        </View>
+
+        {/* Filter Tabs */}
+        <View style={styles.filterContainer}>
+          <TouchableOpacity
+            style={[
+              styles.filterTab,
+              filterType === "all" && styles.filterTabActive,
+            ]}
+            onPress={() => setFilterType("all")}
+          >
+            <Text
+              style={[
+                styles.filterTabText,
+                filterType === "all" && styles.filterTabTextActive,
+              ]}
+            >
+              Tất cả
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.filterTab,
+              filterType === "income" && styles.filterTabActiveIncome,
+            ]}
+            onPress={() => setFilterType("income")}
+          >
+            <Text
+              style={[
+                styles.filterTabText,
+                filterType === "income" && styles.filterTabTextActive,
+              ]}
+            >
+              Thu
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.filterTab,
+              filterType === "expense" && styles.filterTabActiveExpense,
+            ]}
+            onPress={() => setFilterType("expense")}
+          >
+            <Text
+              style={[
+                styles.filterTabText,
+                filterType === "expense" && styles.filterTabTextActive,
+              ]}
+            >
+              Chi
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Search Bar */}
@@ -303,6 +364,43 @@ const styles = StyleSheet.create({
   },
   trashButtonText: {
     fontSize: 18,
+  },
+  filterContainer: {
+    flexDirection: "row",
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 8,
+    gap: 8,
+  },
+  filterTab: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+  filterTabActive: {
+    backgroundColor: "#4CAF50",
+    borderColor: "#4CAF50",
+  },
+  filterTabActiveIncome: {
+    backgroundColor: "#4CAF50",
+    borderColor: "#4CAF50",
+  },
+  filterTabActiveExpense: {
+    backgroundColor: "#F44336",
+    borderColor: "#F44336",
+  },
+  filterTabText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#666",
+  },
+  filterTabTextActive: {
+    color: "#fff",
   },
   searchContainer: {
     flexDirection: "row",
