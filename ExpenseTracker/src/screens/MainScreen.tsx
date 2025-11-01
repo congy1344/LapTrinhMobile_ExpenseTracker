@@ -1,48 +1,51 @@
-import React from "react";
-import { StyleSheet, Text, View, ScrollView } from "react-native";
+import React, { useState, useCallback } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useFocusEffect } from "@react-navigation/native";
 import TransactionItem from "../components/TransactionItem";
 import { Transaction } from "../types/Transaction";
+import { RootStackParamList } from "../types/Navigation";
+import { getAllTransactions } from "../services/database";
 
-const MainScreen: React.FC = () => {
-  // Sample data for demonstration
-  const sampleTransactions: Transaction[] = [
-    {
-      id: "1",
-      title: "Lương tháng 11",
-      amount: 15000000,
-      createdAt: new Date("2025-11-01"),
-      type: "income",
-    },
-    {
-      id: "2",
-      title: "Mua sắm siêu thị",
-      amount: 500000,
-      createdAt: new Date("2025-11-02"),
-      type: "expense",
-    },
-    {
-      id: "3",
-      title: "Tiền điện tháng 10",
-      amount: 350000,
-      createdAt: new Date("2025-11-03"),
-      type: "expense",
-    },
-    {
-      id: "4",
-      title: "Bán đồ cũ",
-      amount: 1200000,
-      createdAt: new Date("2025-11-04"),
-      type: "income",
-    },
-    {
-      id: "5",
-      title: "Ăn uống",
-      amount: 250000,
-      createdAt: new Date("2025-11-05"),
-      type: "expense",
-    },
-  ];
+type MainScreenProps = {
+  navigation: NativeStackNavigationProp<RootStackParamList, "Main">;
+};
+
+const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Load transactions from database
+  const loadTransactions = async () => {
+    try {
+      const data = await getAllTransactions();
+      setTransactions(data);
+    } catch (error) {
+      console.error("Error loading transactions:", error);
+    }
+  };
+
+  // Reload data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadTransactions();
+    }, [])
+  );
+
+  // Pull to refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadTransactions();
+    setRefreshing(false);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -56,14 +59,43 @@ const MainScreen: React.FC = () => {
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         >
           <View style={styles.listContainer}>
-            <Text style={styles.sectionTitle}>Giao dịch gần đây</Text>
-            {sampleTransactions.map((transaction) => (
-              <TransactionItem key={transaction.id} transaction={transaction} />
-            ))}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Giao dịch gần đây</Text>
+              <Text style={styles.transactionCount}>
+                ({transactions.length})
+              </Text>
+            </View>
+
+            {transactions.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>Chưa có giao dịch nào</Text>
+                <Text style={styles.emptySubText}>
+                  Nhấn nút "Add" để thêm giao dịch mới
+                </Text>
+              </View>
+            ) : (
+              transactions.map((transaction) => (
+                <TransactionItem
+                  key={transaction.id}
+                  transaction={transaction}
+                />
+              ))
+            )}
           </View>
         </ScrollView>
+
+        {/* Add Button */}
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => navigation.navigate("AddTransaction")}
+        >
+          <Text style={styles.addButtonText}>+ Add</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -102,13 +134,62 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingVertical: 16,
+    paddingBottom: 80,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 16,
+    marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
     color: "#333",
-    marginHorizontal: 16,
-    marginBottom: 12,
+  },
+  transactionCount: {
+    fontSize: 16,
+    color: "#666",
+    marginLeft: 8,
+  },
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
+    paddingHorizontal: 40,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#999",
+    marginBottom: 8,
+  },
+  emptySubText: {
+    fontSize: 14,
+    color: "#bbb",
+    textAlign: "center",
+  },
+  addButton: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    backgroundColor: "#4CAF50",
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 30,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  addButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
   },
 });
 

@@ -1,0 +1,97 @@
+import * as SQLite from 'expo-sqlite';
+import { Transaction, TransactionType } from '../types/Transaction';
+
+const db = SQLite.openDatabaseSync('expenseTracker.db');
+
+// Initialize database
+export const initDatabase = async (): Promise<void> => {
+  try {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        amount REAL NOT NULL,
+        createdAt TEXT NOT NULL,
+        type TEXT NOT NULL
+      );
+    `);
+    console.log('Database initialized successfully');
+  } catch (error) {
+    console.error('Error initializing database:', error);
+    throw error;
+  }
+};
+
+// Add new transaction
+export const addTransaction = async (
+  title: string,
+  amount: number,
+  type: TransactionType
+): Promise<void> => {
+  try {
+    const createdAt = new Date().toISOString();
+    await db.runAsync(
+      'INSERT INTO transactions (title, amount, createdAt, type) VALUES (?, ?, ?, ?)',
+      [title, amount, createdAt, type]
+    );
+    console.log('Transaction added successfully');
+  } catch (error) {
+    console.error('Error adding transaction:', error);
+    throw error;
+  }
+};
+
+// Get all transactions
+export const getAllTransactions = async (): Promise<Transaction[]> => {
+  try {
+    const result = await db.getAllAsync<{
+      id: number;
+      title: string;
+      amount: number;
+      createdAt: string;
+      type: TransactionType;
+    }>('SELECT * FROM transactions ORDER BY createdAt DESC');
+
+    return result.map((row) => ({
+      id: row.id.toString(),
+      title: row.title,
+      amount: row.amount,
+      createdAt: new Date(row.createdAt),
+      type: row.type,
+    }));
+  } catch (error) {
+    console.error('Error getting transactions:', error);
+    throw error;
+  }
+};
+
+// Delete transaction
+export const deleteTransaction = async (id: string): Promise<void> => {
+  try {
+    await db.runAsync('DELETE FROM transactions WHERE id = ?', [parseInt(id)]);
+    console.log('Transaction deleted successfully');
+  } catch (error) {
+    console.error('Error deleting transaction:', error);
+    throw error;
+  }
+};
+
+// Update transaction
+export const updateTransaction = async (
+  id: string,
+  title: string,
+  amount: number,
+  type: TransactionType
+): Promise<void> => {
+  try {
+    await db.runAsync(
+      'UPDATE transactions SET title = ?, amount = ?, type = ? WHERE id = ?',
+      [title, amount, type, parseInt(id)]
+    );
+    console.log('Transaction updated successfully');
+  } catch (error) {
+    console.error('Error updating transaction:', error);
+    throw error;
+  }
+};
+
