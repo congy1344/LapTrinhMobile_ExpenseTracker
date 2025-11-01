@@ -83,6 +83,11 @@ const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
                 <TransactionItem
                   key={transaction.id}
                   transaction={transaction}
+                  onPress={() =>
+                    navigation.navigate("EditTransaction", {
+                      transactionId: transaction.id,
+                    })
+                  }
                 />
               ))
             )}

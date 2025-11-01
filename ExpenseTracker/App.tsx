@@ -5,6 +5,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import MainScreen from "./src/screens/MainScreen";
 import AddTransactionScreen from "./src/screens/AddTransactionScreen";
+import EditTransactionScreen from "./src/screens/EditTransactionScreen";
 import { RootStackParamList } from "./src/types/Navigation";
 import { initDatabase } from "./src/services/database";
 
@@ -30,6 +31,10 @@ export default function App() {
           <Stack.Screen
             name="AddTransaction"
             component={AddTransactionScreen}
+          />
+          <Stack.Screen
+            name="EditTransaction"
+            component={EditTransactionScreen}
           />
         </Stack.Navigator>
       </NavigationContainer>
