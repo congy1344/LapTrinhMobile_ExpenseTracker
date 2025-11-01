@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -13,7 +14,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import TransactionItem from "../components/TransactionItem";
 import { Transaction } from "../types/Transaction";
 import { RootStackParamList } from "../types/Navigation";
-import { getAllTransactions } from "../services/database";
+import { getAllTransactions, deleteTransaction } from "../services/database";
 
 type MainScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, "Main">;
@@ -47,12 +48,43 @@ const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
     setRefreshing(false);
   };
 
+  // Handle delete transaction
+  const handleDelete = (transaction: Transaction) => {
+    Alert.alert("Xóa giao dịch", `Bạn có muốn xóa "${transaction.title}"?`, [
+      {
+        text: "Hủy",
+        style: "cancel",
+      },
+      {
+        text: "Xóa",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteTransaction(transaction.id);
+            Alert.alert("Thành công", "Đã chuyển vào thùng rác");
+            loadTransactions();
+          } catch (error) {
+            Alert.alert("Lỗi", "Không thể xóa giao dịch");
+          }
+        },
+      },
+    ]);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>EXPENSE TRACKER</Text>
+          <View style={styles.headerTop}>
+            <Text style={styles.headerTitle}>EXPENSE TRACKER</Text>
+            <TouchableOpacity
+              style={styles.trashButton}
+              onPress={() => navigation.navigate("Trash")}
+            >
+              <Text style={styles.trashButtonText}>🗑️ Thùng rác</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Transaction List */}
@@ -88,6 +120,7 @@ const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
                       transactionId: transaction.id,
                     })
                   }
+                  onLongPress={() => handleDelete(transaction)}
                 />
               ))
             )}
@@ -117,8 +150,6 @@ const styles = StyleSheet.create({
   header: {
     padding: 20,
     backgroundColor: "#4CAF50",
-    alignItems: "center",
-    justifyContent: "center",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -128,11 +159,27 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
+  headerTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   headerTitle: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#fff",
     letterSpacing: 1,
+  },
+  trashButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  trashButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
   },
   scrollView: {
     flex: 1,

@@ -5,11 +5,13 @@ import { Transaction } from "../types/Transaction";
 interface TransactionItemProps {
   transaction: Transaction;
   onPress?: () => void;
+  onLongPress?: () => void;
 }
 
 const TransactionItem: React.FC<TransactionItemProps> = ({
   transaction,
   onPress,
+  onLongPress,
 }) => {
   const { title, amount, createdAt, type } = transaction;
 
@@ -36,6 +38,7 @@ const TransactionItem: React.FC<TransactionItemProps> = ({
     <TouchableOpacity
       style={styles.container}
       onPress={onPress}
+      onLongPress={onLongPress}
       activeOpacity={0.7}
     >
       {/* Left side - Type indicator */}
